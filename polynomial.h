@@ -234,6 +234,6 @@ public:
         return make_pair(q, r);
     }
 };
-template<class R> polynomial<R> operator *(const R &c, polynomial<R> f){
+template<class R> polynomial<R> operator *(const R &c, const polynomial<R> &f){
     return f*c;
 }
