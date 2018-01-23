@@ -104,8 +104,11 @@ private:
         }
         polynomial<Z> result(d1+d2+1, m);
         for(int i=0; i<=d1; i++) for(int j=0; j<=d2; j++){
-            result[i+j] += a[i]*b[j];
-            if(m) result[i+j] %= m;
+            if(m){
+                result[i+j] = (result[i+j]+a[i]*b[j]%m)%m;
+            }else{
+                result[i+j] += a[i]*b[j];
+            }
         }
         result.trunc();
         return result;
@@ -124,7 +127,7 @@ private:
             q[i] = g[d2] * r[d2+i];
             for(int j=0; j<=d2; j++){
                 if(m){
-                    r[i+j] = (r[i+j]+(m-q[i])*g[j])%m;
+                    r[i+j] = (r[i+j]+(m-q[i])*g[j]%m)%m;
                 }else{
                     r[i+j] -= q[i]*g[j];
                 }
@@ -214,8 +217,10 @@ public:
     }
     polynomial<Z> operator *(const Z &c) const{
         polynomial<Z> result = *this;
+        Z c2 = c;
+        if(m) c2 %= m;
         for(int i=0; i<(int)result.size(); i++){
-            result[i] *= c;
+            result[i] *= c2;
         }
         result.trunc();
         return result;
