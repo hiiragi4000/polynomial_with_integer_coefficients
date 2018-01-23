@@ -6,7 +6,7 @@
 #include<type_traits>
 using namespace std;
 
-#define FFT_LEN 131072
+#define FFT_LEN 65536
 #ifndef M_PI
 const double M_PI = acos(-1);
 #endif
@@ -273,10 +273,14 @@ public:
         polynomial<Z> result(n, m);
         for(int i=0; i<=n-1; i++){
             long long q = floor((x[i].real()-xi[i])/nttp+.5);
-            if(q < 0){
-                result[i] = -(-q-1)*nttp-(nttp-xi[i]);
+            if(!m){
+                if(q < 0){
+                    result[i] = -(-q-1)*nttp-(nttp-xi[i]);
+                }else{
+                    result[i] = (Z)q*nttp+xi[i];
+                }
             }else{
-                result[i] = (Z)q*nttp+xi[i];
+                result[i] = ((q%m)*(nttp%m))%m+xi[i]%m;
             }
         }
         result.trunc();
