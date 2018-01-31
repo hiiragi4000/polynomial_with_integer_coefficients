@@ -6,20 +6,19 @@
 #include<type_traits>
 using namespace std;
 
-#define FFT_LEN 65536
 #ifndef M_PI
 const double M_PI = acos(-1);
 #endif
 vector<complex<double>> fft(const vector<complex<double>> &x, const int &inv){
-    static bool fft_ready = false;
-    static complex<double> loli[FFT_LEN];
+    static int fft_len = 0;
+    static vector<complex<double>> loli;
     int n = x.size();
-    assert((n&-n)==n && n<=FFT_LEN && abs(inv)==1);
-    if(!fft_ready){
-        for(int k=0; k<FFT_LEN; k++){
-            loli[k] = exp(complex<double>(0, 2*M_PI*k/FFT_LEN));
+    assert((n&-n)==n && abs(inv)==1);
+    if(fft_len < n){
+        loli.resize(fft_len=n);
+        for(int k=0; k<fft_len; k++){
+            loli[k] = exp(complex<double>(0, 2*M_PI*k/fft_len));
         }
-        fft_ready = true;
     }
     vector<complex<double>> X = x;
     for(int i=1, j=0; i<n; i++){
@@ -29,9 +28,9 @@ vector<complex<double>> fft(const vector<complex<double>> &x, const int &inv){
         }
     }
     for(int i=2; i<=n; i*=2){
-        int d = (inv==1)? FFT_LEN-(FFT_LEN/i): FFT_LEN/i;
+        int d = (inv==1)? fft_len-(fft_len/i): fft_len/i;
         for(int j=0; j<n; j+=i){
-            for(int k=0, a=0; k<i/2; k++, a=(a+d)%FFT_LEN){
+            for(int k=0, a=0; k<i/2; k++, a=(a+d)%fft_len){
                 complex<double> s = X[j+k], t = loli[a] * X[j+k+i/2];
                 X[j+k] = s + t;
                 X[j+k+i/2] = s - t;
@@ -46,27 +45,30 @@ vector<complex<double>> fft(const vector<complex<double>> &x, const int &inv){
     return X;
 }
 
-#define NTT_LEN FFT_LEN
+#define NTT_LEN (1<<27)
 static const long long nttp = (15<<27)+1;
 vector<long long> ntt(const vector<long long> &x, const int &inv){
     static const long long pr = 31;
-    static bool ntt_ready = false;
-    static long long loli[NTT_LEN];
+    static int ntt_len = 0;
+    static vector<long long> loli;
     int n = x.size();
     assert((n&-n)==n && n<=NTT_LEN && abs(inv)==1);
     for(int i=0; i<=n-1; i++) assert(0<=x[i] && x[i]<=nttp-1);
-    if(!ntt_ready){
-        loli[0] = loli[1] = 1;
-        for(int i=1; i<=15; i++){
-            loli[1] = pr*loli[1]%nttp;
+    if(ntt_len < n){
+        loli.resize(ntt_len=n);
+        loli[0] = 1;
+        if(ntt_len >= 2){
+            loli[1] = 1;
+            for(int i=1; i<=15; i++){
+                loli[1] = pr*loli[1]%nttp;
+            }
+            for(int i=(1<<27)/ntt_len; i>1; i>>=1){
+                loli[1] = loli[1]*loli[1]%nttp;
+            }
+            for(int i=2; i<ntt_len; i++){
+                loli[i] = loli[1]*loli[i-1]%nttp;
+            }
         }
-        for(int i=(1<<27)/NTT_LEN; i>1; i>>=1){
-            loli[1] = loli[1]*loli[1]%nttp;
-        }
-        for(int i=2; i<NTT_LEN; i++){
-            loli[i] = loli[1]*loli[i-1]%nttp;
-        }
-        ntt_ready = true;
     }
     vector<long long> X = x;
     for(int i=1, j=0; i<n; i++){
@@ -74,9 +76,9 @@ vector<long long> ntt(const vector<long long> &x, const int &inv){
         if(i < j) swap(X[i], X[j]);
     }
     for(int i=2; i<=n; i*=2){
-        int d = (inv==1)? NTT_LEN-(NTT_LEN/i): NTT_LEN/i;
+        int d = (inv==1)? ntt_len-(ntt_len/i): ntt_len/i;
         for(int j=0; j<n; j+=i){
-            for(int k=0, a=0; k<i/2; k++, a=(a+d)%NTT_LEN){
+            for(int k=0, a=0; k<i/2; k++, a=(a+d)%ntt_len){
                 long long s = X[j+k], t = loli[a]*X[j+k+i/2]%nttp;
                 X[j+k] = (s+t)%nttp;
                 X[j+k+i/2] = (s-t+nttp)%nttp;
