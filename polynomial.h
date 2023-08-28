@@ -276,7 +276,7 @@ template<typename Z> struct polynomial{
       int d1 = deg(), d2 = b.deg();
       assert(d2 >= 0);
       if(d1 < d2){
-         return *this = {m};
+         return *this = polynomial{m};
       }
       if(d2 <= 32){
          return *this = osoi_warizan(b).first;
@@ -342,6 +342,20 @@ private:
       return {q, r.trunc()};
    }
 };
+template<typename Z> std::pair<polynomial<Z>, polynomial<Z>> polynomial<Z>::division(polynomial<Z> const &b) const{
+   assert(m == b.m);
+   int d1 = deg(), d2 = b.deg();
+   assert(d2 >= 0);
+   if(d1 < d2){
+      auto r = *this;
+      return {polynomial(m), r.trunc()};
+   }
+   if(d2 <= 32){
+      return osoi_warizan(b);
+   }
+   auto q = *this/b, r = *this-b*q;
+   return {q, r};
+}
 template<typename Z> polynomial<Z> operator+(polynomial<Z> f, polynomial<Z> const &g){
    return f += g;
 }
